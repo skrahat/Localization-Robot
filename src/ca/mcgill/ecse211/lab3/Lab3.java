@@ -4,6 +4,7 @@ import ca.mcgill.ecse211.lab3.UltrasonicLocalizer;
 
 import ca.mcgill.ecse211.lab3.OdometerExceptions;
 import lejos.hardware.Button;
+import lejos.hardware.Sound;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
@@ -78,21 +79,18 @@ public class Lab3 {
 			
 
 			// spawn a new Thread to avoid Driver.drive() from blocking
-			(new Thread() {
 				/*
 				 * This is our run method. We called the methods here.
 				 * 
 				 * @see java.lang.Thread#run()
 				 */
 
-				public void run() {
 					act=1;	
 					UltrasonicLocalizer.UltrasonicLocalizerMain(act);
 					// risingEdge();
 
-				}
+				
 
-			}).start();
 		}
 		// Falling Edge
 		if (buttonChoice == Button.ID_LEFT) {
@@ -108,20 +106,41 @@ public class Lab3 {
 			odoDisplayThread.start();
 
 			// spawn a new Thread to avoid Driver.drive() from blocking
-			(new Thread() {
 				/*
 				 * This is our run method. We called the methods here.
 				 * 
 				 * @see java.lang.Thread#run()
 				 */
 
-				public void run() {
+					act=2;	
+					UltrasonicLocalizer.UltrasonicLocalizerMain(act);
 
-				}
+		
 
-			}).start();
 		}
+		
+			// clears the display
+			lcd.clear();
 
+			// Screen display
+	
+			
+			buttonChoice = Button.waitForAnyPress(); // Records choice (left or right press)
+		
+		if (buttonChoice == Button.ID_RIGHT) {
+			lcd.clear();
+
+			Thread odoThread = new Thread(odometer);
+			odoThread.start();
+			Thread odoDisplayThread = new Thread(odometryDisplay);
+			odoDisplayThread.start();
+			Sound.beep();
+			Sound.beep();
+			Sound.beep();
+			Sound.beep();
+			Sound.beep();
+
+		}
 		while (Button.waitForAnyPress() != Button.ID_ESCAPE)
 			;
 		System.exit(0);

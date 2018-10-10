@@ -31,6 +31,8 @@ public class UltrasonicLocalizer extends Lab3 {
 	public static final double track = 15.75;
 	private static boolean isActive;
 	private static boolean isActive2;
+	private static boolean isOn;
+
 	private static int edge;
 	private static double delta1;
 	private static double delta2;
@@ -51,7 +53,8 @@ public class UltrasonicLocalizer extends Lab3 {
 	}
 
 	public static void fallingEdge() {
-		isActive = true;
+		isActive = false;
+		isOn = true;
 		try {
 			odo = Odometer.getOdometer();
 		} catch (OdometerExceptions e) {
@@ -63,9 +66,25 @@ public class UltrasonicLocalizer extends Lab3 {
 			motor.stop();
 			motor.setAcceleration(3000);
 		}
+
+		while (isOn) {
+			usDistance.fetchSample(usData, 0); // acquire data
+			obstDistance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
+
+			leftMotor.setSpeed(ROTATE_SPEED);
+			rightMotor.setSpeed(ROTATE_SPEED);
+			leftMotor.backward();
+			rightMotor.forward();
+			if (obstDistance >= 100) {
+
+				isActive = true;
+				isOn = false;
+			}
+		}
 		while (isActive) {
 			usDistance.fetchSample(usData, 0); // acquire data
 			obstDistance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
+
 			if (obstDistance > 255) {
 				obstDistance = 255;
 			}
@@ -74,7 +93,7 @@ public class UltrasonicLocalizer extends Lab3 {
 			leftMotor.backward();
 			rightMotor.forward();
 
-			if ( obstDistance < 14) {
+			if (obstDistance < 14) {
 				leftMotor.stop(true);
 				rightMotor.stop();
 				currentPosition = odo.getXYT();
@@ -106,7 +125,124 @@ public class UltrasonicLocalizer extends Lab3 {
 			}
 		}
 		if (delta1 > delta2) {
-			delta3 = 45-((delta1 + delta2) / 2);
+			delta3 = 45 - ((delta1 + delta2) / 2);
+			odo.setTheta(180 + delta3 + odo.getXYT()[2]);
+			currentPosition = odo.getXYT();
+
+			leftMotor.rotate(convertAngle(leftRadius, track, -currentPosition[2]), true); // lab3 rotates
+			rightMotor.rotate(-convertAngle(rightRadius, track, -currentPosition[2]), false);
+
+		} else {
+			delta3 = 135 - ((delta1 + delta2) / 2);
+			odo.setTheta(-90 + delta3 + odo.getXYT()[2]);
+			currentPosition = odo.getXYT();
+			Sound.beep();
+			Sound.beep();
+
+			leftMotor.rotate(convertAngle(leftRadius, track, -currentPosition[2]), true); // lab3 rotates
+			rightMotor.rotate(-convertAngle(rightRadius, track, -currentPosition[2]), false);
+
+		}
+	}
+
+/////////////////
+/////////////////
+/////////////////
+/////////////////
+/////////////////
+/////////////////
+/////////////////
+/////////////////
+/////////////////
+	public static void risingEdge() {
+		isActive = false;
+		isOn = true;
+		try {
+			odo = Odometer.getOdometer();
+		} catch (OdometerExceptions e) {
+			e.printStackTrace();
+			return;
+		}
+
+		for (EV3LargeRegulatedMotor motor : new EV3LargeRegulatedMotor[] { leftMotor, rightMotor }) {
+			motor.stop();
+			motor.setAcceleration(3000);
+		}
+
+		while (isOn) {
+			usDistance.fetchSample(usData, 0); // acquire data
+			obstDistance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
+			boolean abc;
+			boolean adc;
+
+			leftMotor.setSpeed(ROTATE_SPEED);
+			rightMotor.setSpeed(ROTATE_SPEED);
+			leftMotor.backward();
+			rightMotor.forward();
+
+			if (obstDistance < 14) {
+				abc = true;
+
+			}
+
+			if (obstDistance < 30) {
+				adc = true;
+			} else {
+				adc = false;
+			}
+
+			if (abc = true && obstDistance > 14) {
+				if (adc) {
+					isActive = true;
+					isOn = false;
+				}
+			}
+		}
+		while (isActive) {
+			usDistance.fetchSample(usData, 0); // acquire data
+			obstDistance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
+
+			if (obstDistance > 255) {
+				obstDistance = 255;
+			}
+			leftMotor.setSpeed(ROTATE_SPEED);
+			rightMotor.setSpeed(ROTATE_SPEED);
+			leftMotor.backward();
+			rightMotor.forward();
+
+			if (obstDistance < 12) {
+				leftMotor.stop(true);
+				rightMotor.stop();
+				currentPosition = odo.getXYT();
+				delta1 = currentPosition[2];
+				isActive = false;
+				isActive2 = true;
+				leftMotor.rotate(convertAngle(leftRadius, track, 30), true); // lab3 rotates
+				rightMotor.rotate(-convertAngle(rightRadius, track, 30), false);
+			}
+		}
+		while (isActive2) {
+			usDistance.fetchSample(usData, 0); // acquire data
+			obstDistance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
+			if (obstDistance > 255) {
+				obstDistance = 255;
+			}
+			leftMotor.setSpeed(ROTATE_SPEED);
+			rightMotor.setSpeed(ROTATE_SPEED);
+			leftMotor.forward();
+			rightMotor.backward();
+
+			if (obstDistance < 12) {
+				leftMotor.stop(true);
+				rightMotor.stop();
+				currentPosition = odo.getXYT();
+				delta2 = currentPosition[2];
+				isActive2 = false;
+
+			}
+		}
+		if (delta1 > delta2) {
+			delta3 = 45 - ((delta1 + delta2) / 2);
 			odo.setTheta(180 + delta3 + odo.getXYT()[2]);
 			currentPosition = odo.getXYT();
 
@@ -128,22 +264,6 @@ public class UltrasonicLocalizer extends Lab3 {
 			Sound.beep();
 			Sound.beep();
 
-		}
-	
-
-	}
-
-	public static void risingEdge() {
-		try {
-			odo = Odometer.getOdometer();
-		} catch (OdometerExceptions e) {
-			e.printStackTrace();
-			return;
-		}
-
-		for (EV3LargeRegulatedMotor motor : new EV3LargeRegulatedMotor[] { leftMotor, rightMotor }) {
-			motor.stop();
-			motor.setAcceleration(3000);
 		}
 
 	}
